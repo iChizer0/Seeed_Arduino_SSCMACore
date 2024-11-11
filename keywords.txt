@@ -1,0 +1,51 @@
+#######################################
+# Syntax Coloring Map For SSCMA Micro Core
+#######################################
+
+#######################################
+# Library (KEYWORD3)
+#######################################
+
+kUNKNOWN	KEYWORD3
+kRGB888	KEYWORD3
+kRGB565	KEYWORD3
+kGRAY8	KEYWORD3
+kJPEG	KEYWORD3
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+SSCMAMicroCore	KEYWORD1
+InvokeConfig	KEYWORD1
+Config	KEYWORD1
+Box	KEYWORD1
+Class	KEYWORD1
+Point	KEYWORD1
+Keypoints	KEYWORD1
+BoxesCallback	KEYWORD1
+ClassesCallback	KEYWORD1
+PointsCallback	KEYWORD1
+KeypointsCallback	KEYWORD1
+Perf	KEYWORD1
+PixelFormat	KEYWORD1
+Frame	KEYWORD1
+Expected	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+invoke	KEYWORD2
+registerBoxesCallback	KEYWORD2
+registerClassesCallback	KEYWORD2
+registerPointsCallback	KEYWORD2
+registerKeypointsCallback	KEYWORD2
+registerPerfCallback	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+
