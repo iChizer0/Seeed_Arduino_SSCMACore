@@ -112,7 +112,7 @@ This library is released under the [Apache License](./LICENSE).
 
 ## Contributions
 
-Contributions and improvements to the library are welcomed. If you encounter any issues or have suggestions for enhancements, please create an issue or pull request [here](https://github.com/your_repository_link).
+Contributions and improvements to the library are welcomed. If you encounter any issues or have suggestions for enhancements, please create an issue or pull request [here](https://github.com/Seeed-Studio/Seeed_Arduino_SSCMACore/issues).
 
 For more detailed information, including specific API references, please refer to the header files and the provided examples included in the library.
 
