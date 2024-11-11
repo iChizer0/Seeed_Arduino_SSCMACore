@@ -1,0 +1,8 @@
+{
+	"name": "SSCMA Micro Core",
+	"keywords": "arduino, seeedstudio, sscma, vision, ai",
+	"version": "1.0.0",
+	"description": "A microcontroller optimized AI inference API for Arduino",
+	"dependencies ": [],
+	"author": "Seeed Studio"
+}
