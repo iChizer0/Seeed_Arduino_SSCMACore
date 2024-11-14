@@ -146,6 +146,7 @@ std::shared_ptr<SSCMAMicroCore::Frame> SSCMAMicroCore::VideoCapture::getManagedF
 
     camera_fb_t* frame = esp_camera_fb_get();
     if (frame == nullptr || frame->buf == nullptr) {
+        delete heap_frame;
         return nullptr;
     }
     *heap_frame = Frame::fromCameraFrame(frame);
