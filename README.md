@@ -19,21 +19,19 @@ SSCMA Micro Core for Arduino is a library designed for Arduino, which supports a
 3. Create an instance of the SSCMAMicroCore:
    ```c++
    SSCMAMicroCore instance;
+   SSCMAMicroCore::VideoCapture capture;
    ```
 
 4. Initialize the SSCMAMicroCore and register callback functions in `setup()` function:
     ```c++
     void setup() {
-        // Initialize Serial, etc.
-
         capture.begin(SSCMAMicroCore::VideoCapture::DefaultCameraConfigXIAOS3);
-
         instance.begin(SSCMAMicroCore::Config::DefaultConfig);
         instance.registerPerfCallback(SSCMAMicroCore::DefaultPerfCallback);
     }
     ```
 
-4. Call the `invoke()` method in the `loop()` function to process the sensor data, then the registered callback function will be called (if the output category is registered in corresponding callback functions):
+5. Call the `invoke()` method in the `loop()` function to process the sensor data, then the registered callback function will be called (if the output category is registered in corresponding callback functions):
     ```c++
     void loop() {
         auto frame = capture.getManagedFrame();
@@ -68,6 +66,9 @@ Please visit the [examples](./examples) folder to find sample sketches that demo
     - `config`: An optional pointer to an `InvokeConfig` struct that overrides the configuration set in `begin`.
     - `user_context`: A user-provided pointer that will be passed to the registered callbacks.
   - **Returns:** An `Expected` struct containing a boolean `success` indicating whether the operation was successful and a `message` providing additional information.
+
+- `invoke(std::shared_ptr<Frame> frame, const InvokeConfig* config = nullptr, void* user_context = nullptr)`
+  - This method is similar to the previous `invoke` method, but it accepts a shared pointer to a managed frame instead of a reference.
 
 ### Callback Registration
 
