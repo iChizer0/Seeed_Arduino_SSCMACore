@@ -13,8 +13,6 @@ SSCMAMicroCore::VideoCapture capture;
 
 void setup() {
 
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-
     // Init serial port
     Serial.begin(115200);
 
@@ -34,23 +32,19 @@ void loop() {
 
     MA_RETURN_IF_UNEXPECTED(instance.invoke(frame));
 
-    auto boxes = instance.getBoxes();
-    for (const auto& box : boxes) {
+    for (const auto& box : instance.getBoxes()) {
         Serial.printf("Box: x=%f, y=%f, w=%f, h=%f, score=%f, target=%d\n", box.x, box.y, box.w, box.h, box.score, box.target);
     }
 
-    auto classes = instance.getClasses();
-    for (const auto& cls : classes) {
+    for (const auto& cls : instance.getClasses()) {
         Serial.printf("Class: target=%d, score=%f\n", cls.target, cls.score);
     }
 
-    auto points = instance.getPoints();
-    for (const auto& point : points) {
+    for (const auto& point : instance.getPoints()) {
         Serial.printf("Point: x=%f, y=%f, z=%f, score=%f, target=%d\n", point.x, point.y, point.z, point.score, point.target);
     }
 
-    auto keypoints = instance.getKeypoints();
-    for (const auto& kp : keypoints) {
+    for (const auto& kp : instance.getKeypoints()) {
         Serial.printf("Keypoints: box: x=%f, y=%f, w=%f, h=%f, score=%f, target=%d\n", kp.box.x, kp.box.y, kp.box.w, kp.box.h, kp.box.score, kp.box.target);
         for (const auto& point : kp.points) {
             Serial.printf("Keypoint: x=%f, y=%f, z=%f, score=%f, target=%d\n", point.x, point.y, point.z, point.score, point.target);
