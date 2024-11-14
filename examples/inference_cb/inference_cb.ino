@@ -13,8 +13,6 @@ SSCMAMicroCore::VideoCapture capture;
 
 void setup() {
 
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-
     // Init serial port
     Serial.begin(115200);
 
