@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 #include <utility>
 
 #if MA_PORTING_ESPRESSIF_ESP32S3
@@ -23,11 +24,80 @@ static void* ma_core_context = nullptr;
 static ma::Engine* ma_engine = nullptr;
 static ma::Model* ma_model   = nullptr;
 
-
 #if MA_PORTING_ESPRESSIF_ESP32
+
+#define CAMERA_PIN_PWDN  -1
+#define CAMERA_PIN_RESET -1
+
+#define CAMERA_PIN_VSYNC 38
+#define CAMERA_PIN_HREF  47
+#define CAMERA_PIN_PCLK  13
+#define CAMERA_PIN_XCLK  10
+
+#define CAMERA_PIN_SIOD  40
+#define CAMERA_PIN_SIOC  39
+
+#define CAMERA_PIN_D0    15
+#define CAMERA_PIN_D1    17
+#define CAMERA_PIN_D2    18
+#define CAMERA_PIN_D3    16
+#define CAMERA_PIN_D4    14
+#define CAMERA_PIN_D5    12
+#define CAMERA_PIN_D6    11
+#define CAMERA_PIN_D7    48
+
+#define XCLK_FREQ_HZ     16000000
+
+static sensor_t* ma_camera_esp32 = nullptr;
+
+SSCMAMicroCore::Expected SSCMAMicroCore::VideoCapture::begin(const camera_config_t& config) {
+    int ec = esp_camera_init(&config);
+    if (ec != ESP_OK) {
+        using namespace std::string_literals;
+        return {false, "Camera init failed: "s + std::to_string(ec)};
+    }
+    ma_camera_esp32 = esp_camera_sensor_get();
+    if (ma_camera_esp32 == nullptr) {
+        return {false, "Camera sensor not found"};
+    }
+    ma_camera_esp32->set_vflip(ma_camera_esp32, 1);
+    ma_camera_esp32->set_hmirror(ma_camera_esp32, 1);
+    return {true, ""};
+}
+
+camera_config_t SSCMAMicroCore::VideoCapture::DefaultCameraConfigXIAOS3 = []() {
+    camera_config_t config;
+    config.ledc_channel = LEDC_CHANNEL_0;
+    config.ledc_timer   = LEDC_TIMER_0;
+    config.pin_d0       = CAMERA_PIN_D0;
+    config.pin_d1       = CAMERA_PIN_D1;
+    config.pin_d2       = CAMERA_PIN_D2;
+    config.pin_d3       = CAMERA_PIN_D3;
+    config.pin_d4       = CAMERA_PIN_D4;
+    config.pin_d5       = CAMERA_PIN_D5;
+    config.pin_d6       = CAMERA_PIN_D6;
+    config.pin_d7       = CAMERA_PIN_D7;
+    config.pin_xclk     = CAMERA_PIN_XCLK;
+    config.pin_pclk     = CAMERA_PIN_PCLK;
+    config.pin_vsync    = CAMERA_PIN_VSYNC;
+    config.pin_href     = CAMERA_PIN_HREF;
+    config.pin_sscb_sda = CAMERA_PIN_SIOD;
+    config.pin_sscb_scl = CAMERA_PIN_SIOC;
+    config.pin_pwdn     = CAMERA_PIN_PWDN;
+    config.pin_reset    = CAMERA_PIN_RESET;
+    config.xclk_freq_hz = XCLK_FREQ_HZ;
+    config.pixel_format = PIXFORMAT_RGB565;
+    config.frame_size   = FRAMESIZE_240X240;
+    config.jpeg_quality = 12;
+    config.fb_count     = 1;
+    config.fb_location  = CAMERA_FB_IN_PSRAM;
+    config.grab_mode    = CAMERA_GRAB_WHEN_EMPTY;
+    return config;
+}();
+
 SSCMAMicroCore::Frame SSCMAMicroCore::Frame::fromCameraFrame(const camera_fb_t* frame) {
     Frame f;
-    if (frame == nullptr) {
+    if (frame == nullptr || frame->buf == nullptr) {
         return f;
     }
     switch (frame->format) {
@@ -56,6 +126,41 @@ SSCMAMicroCore::Frame SSCMAMicroCore::Frame::fromCameraFrame(const camera_fb_t* 
     return f;
 }
 #endif
+
+SSCMAMicroCore::Config SSCMAMicroCore::Config::DefaultConfig = {
+    .model_id      = 0,
+    .algorithm_id  = 0,
+    .invoke_config = nullptr,
+};
+
+SSCMAMicroCore::Expected SSCMAMicroCore::VideoCapture::begin() {
+    return {false, "Not implemented"};
+}
+
+std::shared_ptr<SSCMAMicroCore::Frame> SSCMAMicroCore::VideoCapture::getManagedFrame() {
+#if MA_PORTING_ESPRESSIF_ESP32S3
+    auto heap_frame = new Frame{};
+    if (heap_frame == nullptr) {
+        return nullptr;
+    }
+
+    camera_fb_t* frame = esp_camera_fb_get();
+    if (frame == nullptr || frame->buf == nullptr) {
+        return nullptr;
+    }
+    *heap_frame = Frame::fromCameraFrame(frame);
+
+    return std::shared_ptr<Frame>(heap_frame, [frame](Frame* ptr) {
+        if (ptr != nullptr) {
+            delete ptr;
+            ptr = nullptr;
+        }
+        esp_camera_fb_return(frame);
+    });
+#else
+    return nullptr;
+#endif
+}
 
 
 SSCMAMicroCore::SSCMAMicroCore() {
@@ -237,9 +342,6 @@ SSCMAMicroCore::Expected SSCMAMicroCore::invoke(const Frame& frame, const Invoke
                 using namespace std::string_literals;
                 return {false, "Failed to run model: "s + std::to_string(ret)};
             }
-            if (!_points_callback) {
-                break;
-            }
             auto results = algorithm->getResults();
             if (_config.invoke_config && _config.invoke_config->top_k > 0) {
                 std::sort(results.begin(), results.end(), [](const ma_point_t& a, const ma_point_t& b) { return a.score > b.score; });
@@ -257,9 +359,11 @@ SSCMAMicroCore::Expected SSCMAMicroCore::invoke(const Frame& frame, const Invoke
                 });
             }
             points.shrink_to_fit();
-           
-            _points_callback(points, user_context);
-            
+            if (_points_callback) {
+                _points_callback(points, user_context);
+            }
+            _points = std::move(points);
+
         } break;
 
         case MA_MODEL_TYPE_IMCLS: {
@@ -268,9 +372,6 @@ SSCMAMicroCore::Expected SSCMAMicroCore::invoke(const Frame& frame, const Invoke
             if (ret != MA_OK) {
                 using namespace std::string_literals;
                 return {false, "Failed to run model: "s + std::to_string(ret)};
-            }
-            if (!_classes_callback) {
-                break;
             }
             auto results = algorithm->getResults();
             if (_config.invoke_config && _config.invoke_config->top_k > 0) {
@@ -288,9 +389,11 @@ SSCMAMicroCore::Expected SSCMAMicroCore::invoke(const Frame& frame, const Invoke
                 classes.push_back({result.score, result.target});
             }
             classes.shrink_to_fit();
-           
-            _classes_callback(classes, user_context);
-    
+            if (_classes_callback) {
+                _classes_callback(classes, user_context);
+            }
+            _classes = std::move(classes);
+
         } break;
 
         case MA_MODEL_TYPE_FOMO:
@@ -303,9 +406,6 @@ SSCMAMicroCore::Expected SSCMAMicroCore::invoke(const Frame& frame, const Invoke
             if (ret != MA_OK) {
                 using namespace std::string_literals;
                 return {false, "Failed to run model: "s + std::to_string(ret)};
-            }
-            if (!_boxes_callback) {
-                break;
             }
             auto results = algorithm->getResults();
             if (_config.invoke_config && _config.invoke_config->top_k > 0) {
@@ -323,9 +423,11 @@ SSCMAMicroCore::Expected SSCMAMicroCore::invoke(const Frame& frame, const Invoke
                 boxes.push_back({result.x, result.y, result.w, result.h, result.score, result.target});
             }
             boxes.shrink_to_fit();
-           
-            _boxes_callback(boxes, user_context);
-            
+            if (_boxes_callback) {
+                _boxes_callback(boxes, user_context);
+            }
+            _boxes = std::move(boxes);
+
         } break;
 
         case MA_MODEL_TYPE_YOLOV8_POSE: {
@@ -334,9 +436,6 @@ SSCMAMicroCore::Expected SSCMAMicroCore::invoke(const Frame& frame, const Invoke
             if (ret != MA_OK) {
                 using namespace std::string_literals;
                 return {false, "Failed to run model: "s + std::to_string(ret)};
-            }
-            if (!_keypoints_callback) {
-                break;
             }
             auto results = algorithm->getResults();
             if (_config.invoke_config && _config.invoke_config->top_k > 0) {
@@ -367,8 +466,10 @@ SSCMAMicroCore::Expected SSCMAMicroCore::invoke(const Frame& frame, const Invoke
                 keypoints.push_back(std::move(kp));
             }
             keypoints.shrink_to_fit();
-        
-            _keypoints_callback(keypoints, user_context);
+            if (_keypoints_callback) {
+                _keypoints_callback(keypoints, user_context);
+            }
+            _keypoints = std::move(keypoints);
 
         } break;
 
@@ -376,16 +477,25 @@ SSCMAMicroCore::Expected SSCMAMicroCore::invoke(const Frame& frame, const Invoke
             break;
     }
 
+    SSCMAMicroCore::Perf perf;
+    auto perf_log    = ma_model->getPerf();
+    perf.preprocess  = perf_log.preprocess;
+    perf.inference   = perf_log.inference;
+    perf.postprocess = perf_log.postprocess;
     if (_perf_callback) {
-        SSCMAMicroCore::Perf perf;
-        auto perf_log    = ma_model->getPerf();
-        perf.preprocess  = perf_log.preprocess;
-        perf.inference   = perf_log.inference;
-        perf.postprocess = perf_log.postprocess;
         _perf_callback(perf, user_context);
     }
+    _perf = std::move(perf);
 
     return {true, ""};
+}
+
+SSCMAMicroCore::Expected SSCMAMicroCore::invoke(std::shared_ptr<Frame> frame, const InvokeConfig* config, void* user_context) {
+    if (frame == nullptr) {
+        return {false, "Managed frame is null"};
+    }
+    // TODO: Early release the frame after processing
+    return invoke(*frame, config, user_context);
 }
 
 void SSCMAMicroCore::registerBoxesCallback(BoxesCallback callback) {
@@ -407,3 +517,42 @@ void SSCMAMicroCore::registerKeypointsCallback(KeypointsCallback callback) {
 void SSCMAMicroCore::registerPerfCallback(PerfCallback callback) {
     _perf_callback = callback;
 }
+
+
+SSCMAMicroCore::BoxesCallback SSCMAMicroCore::DefaultBoxesCallback = [](const std::vector<SSCMAMicroCore::Box>& boxes, void*) {
+    printf("Boxes: %d\n", boxes.size());
+    for (const auto& box : boxes) {
+        printf("\tBox: %f %f %f %f %f %d\n", box.x, box.y, box.w, box.h, box.score, box.target);
+    }
+};
+
+SSCMAMicroCore::ClassesCallback SSCMAMicroCore::DefaultClassesCallback = [](const std::vector<SSCMAMicroCore::Class>& classes, void*) {
+    printf("Classes: %d\n", classes.size());
+    for (const auto& cls : classes) {
+        printf("\tClass: %d %f\n", cls.target, cls.score);
+    }
+};
+
+SSCMAMicroCore::PointsCallback SSCMAMicroCore::DefaultPointsCallback = [](const std::vector<SSCMAMicroCore::Point>& points, void*) {
+    printf("Points: %d\n", points.size());
+    for (const auto& point : points) {
+        printf("\tPoint: %f %f %f %f %d\n", point.x, point.y, point.z, point.score, point.target);
+    }
+};
+
+SSCMAMicroCore::KeypointsCallback SSCMAMicroCore::DefaultKeypointsCallback = [](const std::vector<SSCMAMicroCore::Keypoints>& keypoints, void*) {
+    printf("Keypoints: %d\n", keypoints.size());
+    for (const auto& kp : keypoints) {
+        printf("\tBox: %f %f %f %f %f %d\n", kp.box.x, kp.box.y, kp.box.w, kp.box.h, kp.box.score, kp.box.target);
+        printf("\tPoints: %d\n", kp.points.size());
+        for (const auto& point : kp.points) {
+            printf("\t\tPoint: %f %f %f %f %d\n", point.x, point.y, point.z, point.score, point.target);
+        }
+    }
+};
+
+SSCMAMicroCore::PerfCallback SSCMAMicroCore::DefaultPerfCallback = [](const SSCMAMicroCore::Perf& perf, void*) {
+    printf("Preprocess: %d ms\n", perf.preprocess);
+    printf("Inference: %d ms\n", perf.inference);
+    printf("Postprocess: %d ms\n", perf.postprocess);
+};

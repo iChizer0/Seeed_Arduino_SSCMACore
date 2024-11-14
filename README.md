@@ -24,34 +24,20 @@ SSCMA Micro Core for Arduino is a library designed for Arduino, which supports a
 4. Initialize the SSCMAMicroCore and register callback functions in `setup()` function:
     ```c++
     void setup() {
-        // Initialize Serial, Camera, etc.
+        // Initialize Serial, etc.
 
-        instance.begin(SSCMAMicroCore::Config{});
+        capture.begin(SSCMAMicroCore::VideoCapture::DefaultCameraConfigXIAOS3);
 
-        instance.registerBoxesCallback([](const std::vector<SSCMAMicroCore::Box>& boxes, void* user_context) {
-            Serial.printf("Boxes: %d\n", boxes.size());
-            for (const auto& box : boxes) {
-                Serial.printf("Box: %f %f %f %f %f %d\n", box.x, box.y, box.w, box.h, box.score, box.target);
-            }
-        });
+        instance.begin(SSCMAMicroCore::Config::DefaultConfig);
+        instance.registerPerfCallback(SSCMAMicroCore::DefaultPerfCallback);
     }
     ```
 
 4. Call the `invoke()` method in the `loop()` function to process the sensor data, then the registered callback function will be called (if the output category is registered in corresponding callback functions):
     ```c++
     void loop() {
-        camera_fb_t* frame = esp_camera_fb_get();
-        if (frame == nullptr) {
-            Serial.println("Camera capture failed");
-            return;
-        }
-    
-        auto ret = instance.invoke(SSCMAMicroCore::Frame::fromCameraFrame(frame));
-        if (!ret.success) {
-            Serial.println(ret.message.c_str());
-        }
-    
-        esp_camera_fb_return(frame);
+        auto frame = capture.getManagedFrame();
+        instance.invoke(frame);    
     }
     ```
 
@@ -99,6 +85,21 @@ Please visit the [examples](./examples) folder to find sample sketches that demo
 
 - `void registerPerfCallback(PerfCallback callback)`
   - Registers a callback function that will be called when performance metrics are available.
+
+- `const std::vector<Box>& getBoxes() const`
+  - Returns the box detection results.
+
+- `const std::vector<Class>& getClasses() const`
+  - Returns the classification results.
+
+- `const std::vector<Point>& getPoints() const`
+  - Returns the point detection results.
+
+- `const std::vector<Keypoints>& getKeypoints() const`
+  - Returns the keypoint detection results.
+
+- `const Perf& getPerf() const`
+  - Returns the performance metrics.
 
 Please refer to the [header files](./src/SSCMA_Micro_Core.h) for detailed information about the library's types and APIs.
 

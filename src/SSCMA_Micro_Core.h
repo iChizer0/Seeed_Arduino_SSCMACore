@@ -57,6 +57,20 @@
 #endif
 
 
+#ifndef MA_RETURN_IF_UNEXPECTED
+#define MA_RETURN_IF_UNEXPECTED(expr)            \
+    do {                                         \
+        auto ret = (expr);                       \
+        if (!ret.success) {                      \
+            printf("%s\n", ret.message.c_str()); \
+            return;                              \
+        }                                        \
+    } while (0)
+#else
+#warning "MA_RETURN_IF_UNEXPECTED is already defined."
+#endif
+
+
 /**
  * @brief The SSCMAMicroCore class provides a microcontroller optimized for SSCMA.
  */
@@ -78,6 +92,8 @@ public:
         int model_id;                       ///< The ID of the model to use.
         int algorithm_id;                   ///< The ID of the algorithm to use.
         const InvokeConfig* invoke_config;  ///< The invocation configuration.
+
+        static Config DefaultConfig;  ///< The default configuration.
     };
 
     /**
@@ -194,6 +210,40 @@ public:
         std::string message;  ///< A message describing the result.
     };
 
+    /**
+     * @brief Represents a video capture device.
+     */
+    struct VideoCapture {
+        /**
+         * @brief Begins the video capture device.
+         * @return An Expected result indicating success or failure.
+         */
+        Expected begin();
+
+#if MA_PORTING_ESPRESSIF_ESP32
+        /**
+         * @brief Begins the video capture device with the given configuration.
+         * @param config The configuration to use.
+         * @return An Expected result indicating success or failure.
+         */
+        Expected begin(const camera_config_t& config);
+#endif
+
+        /**
+         * @brief Ends the video capture device.
+         * @return An Expected result indicating success or failure.
+         */
+        std::shared_ptr<Frame> getManagedFrame();
+
+#if MA_PORTING_ESPRESSIF_ESP32
+        /**
+         * @brief Default camera configuration for ESP32-CAM.
+         */
+        static camera_config_t DefaultCameraConfigXIAOS3;
+#endif
+    };
+
+
 public:
     /**
      * @brief Constructs a new SSCMAMicroCore instance.
@@ -220,6 +270,16 @@ public:
      * @return An Expected result indicating success or failure.
      */
     Expected invoke(const Frame& frame, const InvokeConfig* config = nullptr, void* user_context = nullptr);
+
+
+    /**
+     * @brief Invokes the SSCMAMicroCore with the given frame and optional configuration.
+     * @param frame The frame to process.
+     * @param config The optional invocation configuration (overrides the current configuration).
+     * @param user_context User-provided context to pass to callbacks.
+     * @return An Expected result indicating success or failure.
+     */
+    Expected invoke(std::shared_ptr<Frame> frame, const InvokeConfig* config = nullptr, void* user_context = nullptr);
 
     /**
      * @brief Registers a callback for box detection results.
@@ -251,6 +311,53 @@ public:
      */
     void registerPerfCallback(PerfCallback callback);
 
+    /**
+     * @brief Gets the detected boxes.
+     * @return The detected boxes.
+     */
+    const std::vector<Box>& getBoxes() const {
+        return _boxes;
+    }
+
+    /**
+     * @brief Gets the classification results.
+     * @return The classification results.
+     */
+    const std::vector<Class>& getClasses() const {
+        return _classes;
+    }
+
+    /**
+     * @brief Gets the detected points.
+     * @return The detected points.
+     */
+    const std::vector<Point>& getPoints() const {
+        return _points;
+    }
+
+    /**
+     * @brief Gets the detected keypoints.
+     * @return The detected keypoints.
+     */
+    const std::vector<Keypoints>& getKeypoints() const {
+        return _keypoints;
+    }
+
+    /**
+     * @brief Gets the performance metrics.
+     * @return The performance metrics.
+     */
+    const Perf& getPerf() const {
+        return _perf;
+    }
+
+public:
+    static BoxesCallback DefaultBoxesCallback;          ///< The default box callback.
+    static ClassesCallback DefaultClassesCallback;      ///< The default class callback.
+    static PointsCallback DefaultPointsCallback;        ///< The default point callback.
+    static KeypointsCallback DefaultKeypointsCallback;  ///< The default keypoint callback.
+    static PerfCallback DefaultPerfCallback;            ///< The default performance callback.
+
 private:
     bool _initialized;  ///< Whether the SSCMAMicroCore is initialized.
     Config _config;     ///< The current configuration of the SSCMAMicroCore.
@@ -261,6 +368,14 @@ private:
     KeypointsCallback _keypoints_callback;  ///< The registered keypoint callback.
 
     PerfCallback _perf_callback;  ///< The registered performance callback.
+
+    std::vector<Box> _boxes;            ///< The detected boxes.
+    std::vector<Class> _classes;        ///< The detected classes.
+    std::vector<Point> _points;         ///< The detected points.
+    std::vector<Keypoints> _keypoints;  ///< The detected keypoints.
+
+    Perf _perf;  ///< The performance metrics.
 };
+
 
 #endif  //_SSCMA_MICRO_CORE_H_
