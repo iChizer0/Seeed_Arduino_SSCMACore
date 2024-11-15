@@ -1,0 +1,51 @@
+{
+    "sscma-micro": {
+        "git": {
+            "url": "https://github.com/iChizer0/SSCMA-Micro",
+            "branch": "ref-s4",
+            "commit": "latest",
+            "submodules": false,
+            "depth": 1
+        },
+        "base_dir": "",
+        "includes": [
+            "sscma\\/core\\/[^\\n]*",
+            "sscma/porting/ma_misc.h"
+        ],
+        "excludes": [
+            "sscma\\/core\\/pipeline\\/[^\\n]*"
+        ],
+        "modifiers": [
+            {
+                "file": "sscma/core/ma_config_internal.h",
+                "operation": "insert_if_not_exist",
+                "at": "#define _MA_CONFIG_INTERNAL_H_",
+                "data": "#include \"../../../ma_config.h\""
+            }
+        ]
+    },
+    "sscma-micro-porting": {
+        "git": {
+            "url": "https://github.com/iChizer0/edgelab-example-esp32",
+            "branch": "ref-s4",
+            "commit": "latest",
+            "submodules": false,
+            "depth": 1
+        },
+        "base_dir": "components/sscma-micro-porting",
+        "includes": [
+            "porting\\/espressif\\/\\w+\\/boards\\/\\w+.h",
+            "porting/espressif/esp32s3/ma_config_board.h",
+            "porting/espressif/esp32s3/ma_misc.c"
+        ],
+        "excludes": [],
+        "modifiers": [
+            {
+                "file": "porting/espressif/esp32s3/ma_misc.c",
+                "operation": "replace_if_exist",
+                "at": "#include <porting/ma_misc.h>",
+                "data": "#include \"../../../../sscma-micro/sscma/porting/ma_misc.h\""
+            }
+        ]
+    }
+}
