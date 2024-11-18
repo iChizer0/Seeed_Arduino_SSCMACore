@@ -2,7 +2,7 @@
     "sscma-micro": {
         "git": {
             "url": "https://github.com/iChizer0/SSCMA-Micro",
-            "branch": "ref-s4",
+            "branch": "refactor/sscma-deploy-esp32",
             "commit": "latest",
             "submodules": false,
             "depth": 1
@@ -51,7 +51,7 @@
     "sscma-micro-porting": {
         "git": {
             "url": "https://github.com/iChizer0/edgelab-example-esp32",
-            "branch": "ref-s4",
+            "branch": "sscma-deploy",
             "commit": "latest",
             "submodules": false,
             "depth": 1
