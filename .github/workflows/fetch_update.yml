@@ -8,7 +8,7 @@ on:
   schedule:
     - cron: '0 0 * * *' # Runs daily at midnight
   workflow_dispatch:
-  
+
 
 jobs:
   fetch-update-components-and-create-pr:
@@ -24,6 +24,8 @@ jobs:
         python-version: '3.x'
 
     - name: Fetch and update components (esp32s3)
+      env:
+        GIT_LFS_SKIP_SMUDGE: 1
       run: python extras/scripts/fetch_components.py extras/configs/esp32.json --output ./src/components/
 
     - name: Check for changes
