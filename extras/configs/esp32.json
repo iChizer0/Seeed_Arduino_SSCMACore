@@ -18,9 +18,23 @@
         "modifiers": [
             {
                 "file": "sscma/core/ma_config_internal.h",
-                "operation": "insert_if_not_exist",
-                "at": "#define _MA_CONFIG_INTERNAL_H_",
-                "data": "#include \"../../../ma_config.h\""
+                "operations": [
+                    {
+                        "name": "insert_if_not_exist",
+                        "at": "#define _MA_CONFIG_INTERNAL_H_",
+                        "data": "#include \"../../../ma_config.h\""
+                    }
+                ]
+            },
+            {
+                "file": "sscma/core/ma_common.h",
+                "operations": [
+                    {
+                        "name": "insert_if_not_exist",
+                        "at": "#define _MA_COMMON_H_",
+                        "data": "#include \"../../../ma_config.h\""
+                    }
+                ]
             }
         ]
     },
@@ -42,9 +56,23 @@
         "modifiers": [
             {
                 "file": "porting/espressif/esp32s3/ma_misc.c",
-                "operation": "replace_if_exist",
-                "at": "#include <porting/ma_misc.h>",
-                "data": "#include \"../../../../sscma-micro/sscma/porting/ma_misc.h\""
+                "operations": [
+                    {
+                        "name": "replace_if_exist",
+                        "at": "#include <porting/ma_misc.h>",
+                        "data": "#include \"../../../../sscma-micro/sscma/porting/ma_misc.h\""
+                    }
+                ]
+            },
+            {
+                "file": "porting/espressif/esp32s3/ma_config_board.h",
+                "operations": [
+                    {
+                        "name": "insert_if_not_exist",
+                        "at": "#define _MA_CONFIG_BOARD_H_",
+                        "data": "#define MA_PORTING_SEEED_XIAO_ESP32S3 1"
+                    }
+                ]
             }
         ]
     }

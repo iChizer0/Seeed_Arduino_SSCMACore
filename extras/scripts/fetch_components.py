@@ -85,11 +85,8 @@ def synchronize_files(src_dir: str, dst_dir: str, includes: list, excludes: list
 def apply_modifiers(src_dir: str, modifiers: list):
     logging.info("applying %d modifiers to %s", len(modifiers), src_dir)
 
-    def op_insert_if_not_exist(fp: str, at: str, data: str):
-        logging.debug("inserting %s into %s at %s", data, fp, at)
-
-        with open(fp, "r", encoding="utf-8") as f:
-            lines = f.readlines()
+    def op_insert_if_not_exist(lines, at: str, data: str):
+        logging.debug("inserting %s at %s", data, at)
 
         at_index = -1
         for i, line in enumerate(lines):
@@ -106,14 +103,9 @@ def apply_modifiers(src_dir: str, modifiers: list):
         if not data.endswith('\n'):
             data += '\n'
         lines.insert(at_index, data)
-        with open(fp, "w", encoding="utf-8") as f:
-            f.writelines(lines)
 
-    def op_replace_if_exist(fp: str, at: str, data: str):
-        logging.debug("replacing %s into %s at %s", data, fp, at)
-
-        with open(fp, "r", encoding="utf-8") as f:
-            lines = f.readlines()
+    def op_replace_if_exist(lines, at: str, data: str):
+        logging.debug("replacing %s at %s", data, at)
 
         at_index = -1
         for i, line in enumerate(lines):
@@ -126,8 +118,7 @@ def apply_modifiers(src_dir: str, modifiers: list):
             return
 
         lines[at_index] = lines[at_index].replace(at, data)
-        with open(fp, "w", encoding="utf-8") as f:
-            f.writelines(lines)
+
 
     op_map = {
         "insert_if_not_exist": op_insert_if_not_exist,
@@ -142,11 +133,20 @@ def apply_modifiers(src_dir: str, modifiers: list):
         if not os.path.exists(fp):
             logging.warning("file not found: %s", fp)
             continue
-        op = modifier.get("operation", "nop")
-        if op not in op_map:
-            logging.warning("unsupported operation: %s", op)
+        ops = modifier.get("operations", [])
+        if len(ops) == 0:
             continue
-        op_map[op](fp, modifier.get("at", ""), modifier.get("data", ""))
+        logging.debug("applying %d operations to %s", len(ops), fp)
+        with open(fp, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        for op in ops:
+            opn = op.get("name")
+            if opn not in op_map:
+                logging.warning("unsupported operation: %s", op)
+                continue
+            op_map[opn](lines, op.get("at", ""), op.get("data", ""))
+        with open(fp, "w", encoding="utf-8") as f:
+            f.writelines(lines)
 
 
 def fetch_components(
