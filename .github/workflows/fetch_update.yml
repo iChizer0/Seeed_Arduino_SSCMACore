@@ -1,0 +1,44 @@
+name: Fetch update components
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight
+  workflow_dispatch:
+
+
+jobs:
+  fetch-update-components-and-create-pr:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Fetch and update components (esp32s3)
+      env:
+        GIT_LFS_SKIP_SMUDGE: 1
+      run: python extras/scripts/fetch_components.py extras/configs/esp32.json --output ./src/components/
+
+    - name: Check for changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git checkout -b update-branch
+        git add .
+        git commit -m "bot: fetch update components" || echo "No changes to commit"
+
+    - name: Push changes and create PR
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git push --set-upstream origin update-branch
+        gh pr create --title "bot: fetch update components" --body "This PR was created automatically by GitHub Actions." --base main --head update-branch
