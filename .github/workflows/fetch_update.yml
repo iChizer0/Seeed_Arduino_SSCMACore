@@ -8,11 +8,7 @@ on:
   schedule:
     - cron: '0 0 * * *' # Runs daily at midnight
   workflow_dispatch:
-    - inputs:
-        run-script:
-          description: 'Fetch update components and create PR'
-          required: true
-          default: 'true'
+  
 
 jobs:
   fetch-update-components-and-create-pr:
