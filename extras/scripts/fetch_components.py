@@ -119,10 +119,25 @@ def apply_modifiers(src_dir: str, modifiers: list):
 
         lines[at_index] = lines[at_index].replace(at, data)
 
+    def regex_replace_if_exist(lines, at: str, data: str):
+        logging.debug("replacing %s at %s", data, at)
+
+        at_index = -1
+        for i, line in enumerate(lines):
+            line = line.strip()
+            if regex.match(at, line):
+                at_index = i
+                break
+        if at_index == -1:
+            logging.warning("target not found: %s", at)
+            return
+
+        lines[at_index] = data if data.endswith('\n') else data + '\n'
 
     op_map = {
         "insert_if_not_exist": op_insert_if_not_exist,
         "replace_if_exist": op_replace_if_exist,
+        "regex_replace_if_exist": regex_replace_if_exist,
     } 
 
     for modifier in modifiers:
@@ -183,6 +198,7 @@ def fetch_components(
 
     logging.info("cleaning up temp directory: %s", temp_dir)
     shutil.rmtree(temp_dir)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Fetch components")

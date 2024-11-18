@@ -35,6 +35,16 @@
                         "data": "#include \"../../../ma_config.h\""
                     }
                 ]
+            },
+            {
+                "file": "sscma/core/ma_core.h",
+                "operations": [
+                    {
+                        "name": "replace_if_exist",
+                        "at": "#include <pipeline/ma_executor.hpp>",
+                        "data": ""
+                    }
+                ]
             }
         ]
     },
@@ -71,6 +81,11 @@
                         "name": "insert_if_not_exist",
                         "at": "#define _MA_CONFIG_BOARD_H_",
                         "data": "#define MA_PORTING_SEEED_XIAO_ESP32S3 1"
+                    },
+                    {
+                        "name": "regex_replace_if_exist",
+                        "at": "#define[\\s]*MA_USE_LIB_JPEGENC[\\s]*1",
+                        "data": "#define MA_USE_LIB_JPEGENC 0"
                     }
                 ]
             }
