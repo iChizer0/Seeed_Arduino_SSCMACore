@@ -1,6 +1,5 @@
 #ifndef _MA_CONFIG_BOARD_H_
 #define _MA_CONFIG_BOARD_H_
-
 #define MA_PORTING_SEEED_XIAO_ESP32S3 1
 
 #ifdef MA_PORTING_ESPRESSIF_ESP32S3_EYE
@@ -19,16 +18,16 @@
 
 #define MA_USE_ENGINE_TFLITE                 1
 #define MA_ENGINE_TFLITE_TENSOE_ARENA_SIZE   (1024 * 1024)
-#define MA_USE_ENGINE_TENSOR_INDEX           0
+#define MA_USE_ENGINE_TENSOR_INDEX           1
 #define MA_USE_STATIC_TENSOR_ARENA           1
 
-#define MA_DEBUG_LEVEL                       5
+#define MA_DEBUG_LEVEL                       2
 
 #define MA_TRIGGER_USE_REAL_GPIO             1
 
 #define MA_USE_EXTERNAL_WIFI_STATUS          1
 
-#define MA_USE_LIB_JPEGENC                   0
+#define MA_USE_LIB_JPEGENC 0
 
 #define MA_TFLITE_OP_CONV_2D                 1
 #define MA_TFLITE_OP_RESHAPE                 1
@@ -54,6 +53,16 @@
 #define MA_TFLITE_OP_SOFTMAX                 1
 #define MA_TFLITE_OP_DEPTHWISE_CONV_2D       1
 #define MA_TFLITE_OP_LEAKY_RELU              1
+
+#define MA_INVOKE_ENABLE_RUN_HOOK            1
+
+#define MA_FILESYSTEM_LITTLEFS               1
+#define MA_STORAGE_LFS_USE_FLASHBD           1
+
+#define MA_OSAL_FREERTOS                     1
+#define MA_OSAL_FREERTOS_CXX_ALLOC_OVERRIDE  0
+#define MA_SEVER_AT_EXECUTOR_STACK_SIZE      (20 * 1024)
+#define MA_SEVER_AT_EXECUTOR_TASK_PRIO       2
 
 
 #endif  // _MA_CONFIG_BOARD_H_

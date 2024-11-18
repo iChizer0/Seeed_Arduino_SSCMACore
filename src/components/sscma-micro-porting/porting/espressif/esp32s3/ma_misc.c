@@ -1,4 +1,3 @@
-
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <freertos/portmacro.h>
@@ -8,7 +7,6 @@
 #include <freertos/timers.h>
 
 #include "../../../../sscma-micro/sscma/porting/ma_misc.h"
-
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -26,6 +24,8 @@ void* ma_calloc(size_t nmemb, size_t size) {
     }
     return ptr;
 }
+
+// void* ma_realloc(void* ptr, size_t size) { return pvPortRealloc(ptr, size); }
 
 void ma_free(void* ptr) {
     free(ptr);

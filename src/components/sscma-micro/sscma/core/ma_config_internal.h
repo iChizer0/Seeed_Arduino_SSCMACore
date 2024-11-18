@@ -1,7 +1,14 @@
 #ifndef _MA_CONFIG_INTERNAL_H_
 #define _MA_CONFIG_INTERNAL_H_
-
 #include "../../../ma_config.h"
+
+#if __has_include(<ma_config.h>)
+    #include <ma_config.h>
+#endif
+
+#if __has_include(<ma_config_board.h>)
+    #include <ma_config_board.h>
+#endif
 
 #ifndef MA_DEBUG_LEVEL
     // Level:
