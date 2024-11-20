@@ -29,13 +29,19 @@ jobs:
       run: python extras/scripts/fetch_components.py extras/configs/esp32.json --output ./src/components/
 
     - name: Check for changes
+      id: check-for-changes
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        if [ -n "$(git status --porcelain)" ]; then
         git checkout -b update-branch
         git add .
-        git commit -m "bot: fetch update components" || echo "No changes to commit"
-
+        git commit -m "bot: fetch update components"
+          echo "##[set-output name=changes;]true"
+        else
+          echo "##[set-output name=changes;]false"
+        fi
+        
     - name: Push changes and create PR
       if: steps.check-for-changes.outputs.changes == 'true'
       env:
