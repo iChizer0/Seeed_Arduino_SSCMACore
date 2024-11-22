@@ -1,18 +1,15 @@
-#include <cstdlib>
-#include <cstring>
+#include "ma_model_segmenter.h"
 
-#include "ma_model_detector.h"
-
+#include "../cv/ma_cv.h"
 
 namespace ma::model {
 
-constexpr char TAG[] = "ma::model::detecor";
+constexpr char TAG[] = "ma::model::segmenter";
 
-Detector::Detector(Engine* p_engine, const char* name, ma_model_type_t type)
-    : Model(p_engine, name, MA_INPUT_TYPE_IMAGE | MA_OUTPUT_TYPE_BBOX | type),
-      input_(p_engine->getInput(0)),  // Use direct method call instead of p_engine_->
-      threshold_nms_(0.45),
-      threshold_score_(0.25) {
+Segmenter::Segmenter(Engine* p_engine, const char* name, ma_model_type_t type) : Model(p_engine, name, MA_INPUT_TYPE_IMAGE | MA_OUTPUT_TYPE_SEGMENTATION | type) {
+    input_           = p_engine_->getInput(0);
+    threshold_nms_   = 0.45;
+    threshold_score_ = 0.25;
 
     is_nhwc_ = input_.shape.dims[3] == 3 || input_.shape.dims[3] == 1;
 
@@ -21,30 +18,25 @@ Detector::Detector(Engine* p_engine, const char* name, ma_model_type_t type)
         img_.width  = input_.shape.dims[2];
         img_.size   = input_.shape.dims[1] * input_.shape.dims[2] * input_.shape.dims[3];
         img_.format = input_.shape.dims[3] == 3 ? MA_PIXEL_FORMAT_RGB888 : MA_PIXEL_FORMAT_GRAYSCALE;
+
     } else {
         img_.height = input_.shape.dims[2];
         img_.width  = input_.shape.dims[3];
         img_.size   = input_.shape.dims[3] * input_.shape.dims[2] * input_.shape.dims[1];
-        img_.format = input_.shape.dims[1] == 3 ? MA_PIXEL_FORMAT_RGB888_PLANAR : MA_PIXEL_FORMAT_GRAYSCALE;
+        img_.format = input_.shape.dims[1] == 3 ? MA_PIXEL_FORMAT_RGB888 : MA_PIXEL_FORMAT_GRAYSCALE;
     }
 
     img_.data = input_.data.u8;
 }
 
-ma_err_t Detector::preprocess() {
-
+Segmenter::~Segmenter() {}
+ma_err_t Segmenter::preprocess() {
     ma_err_t ret = MA_OK;
-
-    if (input_img_ == nullptr) {
-        return MA_OK;
-    }
 
     ret = ma::cv::convert(input_img_, &img_);
     if (ret != MA_OK) {
         return ret;
     }
-
-    // TODO do this in convert
     if (input_.type == MA_TENSOR_TYPE_S8) {
         for (int i = 0; i < input_.size; i++) {
             input_.data.u8[i] -= 128;
@@ -54,21 +46,23 @@ ma_err_t Detector::preprocess() {
     return ret;
 }
 
-const std::forward_list<ma_bbox_t>& Detector::getResults() {
-    return results_;
-}
-
-const void* Detector::getInput() {
+const void* Segmenter::getInput() {
     return static_cast<const void*>(&img_);
 }
 
-ma_err_t Detector::run(const ma_img_t* img) {
-    // MA_ASSERT(img != nullptr);
+const std::forward_list<ma_segm2f_t>& Segmenter::getResults() const {
+    return results_;
+}
+
+ma_err_t Segmenter::run(const ma_img_t* img) {
+    MA_ASSERT(img != nullptr);
+
     input_img_ = img;
+
     return underlyingRun();
 }
 
-ma_err_t Detector::setConfig(ma_model_cfg_opt_t opt, ...) {
+ma_err_t Segmenter::setConfig(ma_model_cfg_opt_t opt, ...) {
     ma_err_t ret = MA_OK;
     va_list args;
     va_start(args, opt);
@@ -89,7 +83,7 @@ ma_err_t Detector::setConfig(ma_model_cfg_opt_t opt, ...) {
     return ret;
 }
 
-ma_err_t Detector::getConfig(ma_model_cfg_opt_t opt, ...) {
+ma_err_t Segmenter::getConfig(ma_model_cfg_opt_t opt, ...) {
     ma_err_t ret = MA_OK;
     va_list args;
     void* p_arg = nullptr;
@@ -110,7 +104,5 @@ ma_err_t Detector::getConfig(ma_model_cfg_opt_t opt, ...) {
     va_end(args);
     return ret;
 }
-
-Detector::~Detector() {}
 
 }  // namespace ma::model

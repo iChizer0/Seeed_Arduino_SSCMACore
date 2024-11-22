@@ -1,5 +1,5 @@
-#ifndef _MA_MODEL_POSE_DETECTOR_H_
-#define _MA_MODEL_POSE_DETECTOR_H_
+#ifndef _MA_MODEL_SEGMENTER_H_
+#define _MA_MODEL_SEGMENTER_H_
 
 #include <vector>
 
@@ -7,7 +7,7 @@
 
 namespace ma::model {
 
-class PoseDetector : public Model {
+class Segmenter : public Model {
 protected:
     ma_tensor_t input_;
     ma_img_t img_;
@@ -18,16 +18,16 @@ protected:
 
     bool is_nhwc_;
 
-    std::forward_list<ma_keypoint3f_t> results_;
+    std::forward_list<ma_segm2f_t> results_;
 
 protected:
     ma_err_t preprocess() override;
 
 public:
-    PoseDetector(Engine* engine, const char* name, ma_model_type_t type);
-    virtual ~PoseDetector();
+    Segmenter(Engine* engine, const char* name, ma_model_type_t type);
+    virtual ~Segmenter();
 
-    const std::forward_list<ma_keypoint3f_t>& getResults() const;
+    const std::forward_list<ma_segm2f_t>& getResults() const;
 
     ma_err_t run(const ma_img_t* img);
 
@@ -40,4 +40,4 @@ public:
 
 }  // namespace ma::model
 
-#endif  // _MA_MODEL_POSE_DETECTOR_H
+#endif  // _MA_MODEL_SEGMENTER_H_

@@ -440,9 +440,7 @@ SSCMAMicroCore::Expected SSCMAMicroCore::invoke(const Frame& frame, const Invoke
             }
             auto results = algorithm->getResults();
             if (_config.invoke_config && _config.invoke_config->top_k > 0) {
-                std::sort(results.begin(), results.end(), [](const ma_keypoint3f_t& a, const ma_keypoint3f_t& b) { return a.box.score > b.box.score; });
-                results.resize(std::min(results.size(), static_cast<size_t>(_config.invoke_config->top_k)));
-                results.shrink_to_fit();
+                results.sort([](const ma_keypoint3f_t& a, const ma_keypoint3f_t& b) { return a.box.score > b.box.score; });
             }
             std::vector<SSCMAMicroCore::Keypoints> keypoints;
             for (const auto& result : results) {
