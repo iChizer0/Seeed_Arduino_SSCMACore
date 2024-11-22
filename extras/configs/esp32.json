@@ -41,7 +41,7 @@
                 "operations": [
                     {
                         "name": "replace_if_exist",
-                        "at": "#include <pipeline/ma_executor.hpp>",
+                        "at": "#include \"pipeline/ma_executor.hpp\"",
                         "data": ""
                     }
                 ]
@@ -50,13 +50,13 @@
     },
     "sscma-micro-porting": {
         "git": {
-            "url": "https://github.com/Seeed-Studio/edgelab-example-esp32",
-            "branch": "test",
+            "url": "https://github.com/Seeed-Studio/sscma-example-esp32",
+            "branch": "2.0.x",
             "commit": "latest",
             "submodules": false,
             "depth": 1
         },
-        "base_dir": "components/sscma-micro-porting",
+        "base_dir": "components/sscma-micro",
         "includes": [
             "porting\\/espressif\\/\\w+\\/boards\\/\\w+.h",
             "porting/espressif/esp32s3/ma_config_board.h",
